@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  phone         String?
+  avatar        String?
+  address       String?                           // JSON: {city, street, postCode}
+  role          String    @default("user")        // user, seller, admin
+  sellerType    String?                           // individual, priest, monastery, publisher, antiquarian
+  bio           String?
+  bankAccount   String?                           // IBAN for payouts
+  stripeAccountId String?
+  country       String?                           // ISO 3166-1 alpha-2: BG, RO, TR, GR, etc.
+  isVerified    Boolean   @default(false)
+  isBanned      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  listings         Book[]
+  purchases        Order[]          @relation("BuyerOrders")
+  sales            Order[]          @relation("SellerOrders")
+  sentMessages     Message[]        @relation("SentMessages")
+  receivedMessages Message[]        @relation("ReceivedMessages")
+  ratingsGiven     Rating[]         @relation("RatingsGiven")
+  ratingsReceived  Rating[]         @relation("RatingsReceived")
+  sessions         Session[]
+  featuredSlots    FeaturedListing[]
+  subscriptions    Subscription[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Author {
+  id     String       @id @default(cuid())
+  name   String       @unique
+  period String?
+  bio    String?
+  books  BookAuthor[]
+}
+
+model Publisher {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  country String?
+  website String?
+  books   Book[]
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  name     String     @unique
+  slug     String     @unique
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  books    Book[]
+}
+
+model Book {
+  id            String    @id @default(cuid())
+  title         String
+  description   String
+  isbn          String?
+  language      String    @default("bg")
+  condition     String    @default("new")   // new, like_new, good, acceptable
+  price         Float
+  originalPrice Float?
+  stock         Int       @default(1)
+  images        String    @default("[]")    // JSON array
+  period        String?                     // patristic, medieval, modern, contemporary
+  liturgicalUse String?
+  year          Int?
+  pages         Int?
+  status        String    @default("pending_approval") // pending_approval, active, sold, paused, removed
+  views         Int       @default(0)
+  sellerId      String
+  publisherId   String?
+  categoryId    String?
+  isFeatured    Boolean   @default(false)
+  featuredUntil DateTime?
+  adminNote     String?                              // rejection reason
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  seller      User        @relation(fields: [sellerId], references: [id])
+  publisher   Publisher?  @relation(fields: [publisherId], references: [id])
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  authors     BookAuthor[]
+  orderItems  OrderItem[]
+  messages    Message[]
+}
+
+model BookAuthor {
+  bookId   String
+  authorId String
+  book     Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id])
+
+  @@id([bookId, authorId])
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  buyerId         String
+  sellerId        String
+  status          String    @default("pending") // pending, paid, shipped, delivered, disputed, cancelled, refunded
+  totalAmount     Float
+  commission      Float
+  sellerPayout    Float
+  paymentMethod      String    @default("stripe")
+  paymentStatus      String    @default("pending")  // pending, held, released, refunded
+  stripePaymentIntent String?
+  shippingAddress    String    @default("{}")        // JSON
+  shippingCost       Float     @default(0)
+  trackingNumber     String?
+  courierService     String?   // econt, speedy
+  notes              String?
+  disputeReason      String?
+  adminResolution    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  paidAt             DateTime?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+
+  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller   User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  items    OrderItem[]
+  messages Message[]
+  rating   Rating?
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  bookId   String
+  quantity Int    @default(1)
+  price    Float
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  book  Book  @relation(fields: [bookId], references: [id])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  bookId     String?
+  orderId    String?
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User   @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  book     Book?  @relation(fields: [bookId], references: [id])
+  order    Order? @relation(fields: [orderId], references: [id])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  raterId   String
+  ratedId   String
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+  rater User  @relation("RatingsGiven", fields: [raterId], references: [id])
+  rated User  @relation("RatingsReceived", fields: [ratedId], references: [id])
+}
+
+model FeaturedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String?
+  type      String   // listing, banner, homepage
+  amount    Float
+  startsAt  DateTime
+  endsAt    DateTime
+  isPaid    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  plan      String   // basic, pro, publisher
+  amount    Float
+  startsAt  DateTime @default(now())
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
