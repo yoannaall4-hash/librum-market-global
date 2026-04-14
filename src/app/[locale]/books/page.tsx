@@ -237,7 +237,7 @@ export default async function BooksPage({
                         </h3>
                         {book.authors.length > 0 && (
                           <p className="text-xs text-stone-500 mb-2 truncate">
-                            {book.authors.map(a => a.author.name).join(', ')}
+                            {book.authors.map((a: { author: { name: string } }) => a.author.name).join(', ')}
                           </p>
                         )}
                         <div className="flex items-baseline justify-between">
