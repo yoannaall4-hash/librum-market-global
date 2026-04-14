@@ -40,23 +40,23 @@ export default async function BookDetailPage({
 
   if (!book || book.status !== 'active') notFound()
 
-  // Increment views
   prisma.book.update({ where: { id }, data: { views: { increment: 1 } } }).catch(() => {})
 
-  // Seller stats
   const [listingCount, ratingsData] = await Promise.all([
     prisma.book.count({ where: { sellerId: book.sellerId, status: 'active' } }).catch(() => 0),
     prisma.rating.findMany({ where: { ratedId: book.sellerId }, select: { score: true } }).catch(() => []),
   ])
+
   const avgRating = ratingsData.length
     ? (ratingsData.reduce((s: number, r: { score: number }) => s + r.score, 0) / ratingsData.length).toFixed(1)
     : null
 
-  const images = (() => { try { return JSON.parse(book.images) } catch { return [] } })()
+  const images: string[] = (() => { try { return JSON.parse(book.images) } catch { return [] } })()
   const priceEur = (book.price * 1.15).toFixed(2)
-  const conditionLabels = CONDITION_LABELS[locale] || CONDITION_LABELS.en
-  const flag = COUNTRY_FLAGS[book.seller.country || ''] || ''
+  const conditionLabels = CONDITION_LABELS[locale] ?? CONDITION_LABELS.en
+  const flag = COUNTRY_FLAGS[book.seller.country ?? ''] ?? ''
   const isOwner = session?.id === book.sellerId
+  const authorNames = book.authors.map((a: { author: { name: string } }) => a.author.name).join(', ')
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -109,20 +109,18 @@ export default async function BookDetailPage({
 
           {book.authors.length > 0 && (
             <p className="text-stone-500 mb-4">
-              {t('author')}: <span className="text-stone-700 font-medium">{book.authors.map(a => a.author.name).join(', ')}</span>
+              {t('author')}: <span className="text-stone-700 font-medium">{authorNames}</span>
             </p>
           )}
 
-          {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">
             <span className="text-4xl font-bold text-stone-900">€{priceEur}</span>
             <span className="text-lg text-stone-400 font-medium">/ {book.price.toFixed(2)} лв.</span>
           </div>
 
-          {/* Condition & category */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="px-3 py-1 bg-stone-100 text-stone-700 text-sm rounded-full font-medium">
-              {conditionLabels[book.condition] || book.condition}
+              {conditionLabels[book.condition] ?? book.condition}
             </span>
             {book.language && (
               <span className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium uppercase">
@@ -136,14 +134,12 @@ export default async function BookDetailPage({
             )}
           </div>
 
-          {/* Description */}
           {book.description && (
             <div className="mb-6">
               <p className="text-stone-700 leading-relaxed text-sm whitespace-pre-line">{book.description}</p>
             </div>
           )}
 
-          {/* Book metadata */}
           <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
             {book.publisher && (
               <div>
@@ -171,15 +167,12 @@ export default async function BookDetailPage({
             )}
           </div>
 
-          {/* Protected deal notice */}
           <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 mb-6">
             <p className="text-sm text-stone-600">
-              <span className="font-semibold text-stone-800">{t('protected_deal')}</span>{' '}
-              {t('protected_deal')}
+              <span className="font-semibold text-stone-800">{t('protected_deal')}</span>
             </p>
           </div>
 
-          {/* CTA buttons */}
           {!isOwner ? (
             <div className="flex gap-3">
               {session ? (
