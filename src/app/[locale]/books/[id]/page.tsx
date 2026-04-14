@@ -49,7 +49,7 @@ export default async function BookDetailPage({
     prisma.rating.findMany({ where: { ratedId: book.sellerId }, select: { score: true } }).catch(() => []),
   ])
   const avgRating = ratingsData.length
-    ? (ratingsData.reduce((s, r) => s + r.score, 0) / ratingsData.length).toFixed(1)
+    ? (ratingsData.reduce((s: number, r) => s + r.score, 0) / ratingsData.length).toFixed(1)
     : null
 
   const images = (() => { try { return JSON.parse(book.images) } catch { return [] } })()
