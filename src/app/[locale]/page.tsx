@@ -4,6 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { getTranslations } from 'next-intl/server'
+import {
+  Landmark, BookOpen, Baby, Library, Leaf, TrendingUp,
+  Building2, Music, GraduationCap, Scale, Brain, Microscope,
+  Map, FileText, Lightbulb, PenLine, BookMarked,
+  type LucideIcon,
+} from 'lucide-react'
 
 async function getRecentBooks() {
   return prisma.book.findMany({
@@ -30,23 +36,23 @@ async function getCategories() {
   return prisma.category.findMany({ orderBy: { name: 'asc' } })
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  archaeology: '🏺',
-  theology: '📖',
-  children: '🧒',
-  encyclopedias: '📚',
-  health: '🌿',
-  economics: '📈',
-  history: '🏛',
-  music: '🎵',
-  pedagogy: '🎓',
-  law: '⚖️',
-  psychology: '🧠',
-  'exact-sciences': '🔬',
-  tourism: '🗺️',
-  textbooks: '📝',
-  philosophy: '💭',
-  fiction: '✍️',
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  archaeology: Landmark,
+  theology: BookOpen,
+  children: Baby,
+  encyclopedias: Library,
+  health: Leaf,
+  economics: TrendingUp,
+  history: Building2,
+  music: Music,
+  pedagogy: GraduationCap,
+  law: Scale,
+  psychology: Brain,
+  'exact-sciences': Microscope,
+  tourism: Map,
+  textbooks: FileText,
+  philosophy: Lightbulb,
+  fiction: PenLine,
 }
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -118,18 +124,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h2 className="text-lg font-bold text-stone-800 mb-6 uppercase tracking-widest">{t('categories')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/${locale}/books?category=${cat.slug}`}
-                className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group"
-              >
-                <span className="text-2xl mb-2">{CATEGORY_ICONS[cat.slug] || '📚'}</span>
-                <span className="text-xs font-medium text-stone-700 text-center group-hover:text-amber-800 leading-tight">
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
+            {categories.map((cat) => {
+              const Icon = CATEGORY_ICONS[cat.slug] ?? BookMarked
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/${locale}/books?category=${cat.slug}`}
+                  className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group"
+                >
+                  <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-stone-100 group-hover:bg-amber-50 mb-2 transition-colors">
+                    <Icon size={18} className="text-stone-500 group-hover:text-amber-700 transition-colors" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-xs font-medium text-stone-700 text-center group-hover:text-amber-800 leading-tight">
+                    {cat.name}
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
