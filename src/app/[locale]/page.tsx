@@ -123,19 +123,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {categories.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h2 className="text-lg font-bold text-stone-800 mb-6 uppercase tracking-widest">{t('categories')}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-2">
             {categories.map((cat) => {
               const Icon = CATEGORY_ICONS[cat.slug] ?? BookMarked
               return (
                 <Link
                   key={cat.id}
                   href={`/${locale}/books?category=${cat.slug}`}
-                  className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group"
+                  className="flex flex-col items-center justify-center py-4 px-2 bg-white rounded-xl border border-stone-100 hover:border-amber-300 hover:shadow-sm transition-all group"
                 >
-                  <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-stone-100 group-hover:bg-amber-50 mb-2 transition-colors">
-                    <Icon size={18} className="text-stone-500 group-hover:text-amber-700 transition-colors" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs font-medium text-stone-700 text-center group-hover:text-amber-800 leading-tight">
+                  <Icon size={18} strokeWidth={1.25} className="text-stone-400 group-hover:text-amber-700 transition-colors mb-2.5" />
+                  <span className="text-[10px] font-semibold tracking-wider uppercase text-stone-400 text-center group-hover:text-amber-700 leading-tight transition-colors">
                     {cat.name}
                   </span>
                 </Link>
